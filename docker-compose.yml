@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   redisOfficial:
-    image: 'docker.io/bitnami/redis'
+    image: 'tsregistry01.azurecr.io/ts/redis:latest'
     container_name: 'Redis'
     restart: unless-stopped
     environment:
@@ -11,7 +11,7 @@ services:
       - "6379:6379"
       
   rabbitmqOfficial:
-   image: rabbitmq:management-alpine
+   image: tsregistry01.azurecr.io/ts/rabbitmqofficial:latest
    container_name: 'RabbitMQ'
    restart: unless-stopped
    volumes:
@@ -20,13 +20,15 @@ services:
    ports:
     - 5672:5672 # AMQP protocol port
     - 15672:15672 # HTTP management UI user:admin pw:admin
+   networks:
+    - rabbitmq_go_net
     
   ListenerAPI:
-    image: bpmonline/exchangelistener:0.8.74 # Latest Listener version available here https://hub.docker.com/r/bpmonline/exchangelistener/tags?page=1&ordering=last_updated
+    image: tsregistry01.azurecr.io/ts/listenerapi:latest # Latest Listener version available here https://hub.docker.com/r/bpmonline/exchangelistener/tags?page=1&ordering=last_updated
     container_name: 'ListenerAPI'
     restart: unless-stopped
     ports:
-      - 10000:80 # Port forward. External port:local port
+      - 10000:8080 # Port forward. External port:local port
     environment:
       ExchangeListenerRedisHost: redisOfficial:6379 # Redis connection
       ExchangeListenerRedisDatabase: 0 # Redis DB
@@ -39,12 +41,12 @@ services:
      - ./appsettingsrmq.json:/app/config/rabbitmq.secrets.json:ro
       
   ListenerWorker:
-    image: bpmonline/exchangelistener-worker:0.8.74 # Latest Listener version available here https://hub.docker.com/r/bpmonline/exchangelistener/tags?page=1&ordering=last_updated
+    image: tsregistry01.azurecr.io/ts/listenerworker:latest # Latest Listener version available here https://hub.docker.com/r/bpmonline/exchangelistener/tags?page=1&ordering=last_updated
     container_name: 'ListenerWorker'
     restart: unless-stopped
     environment:
       ExchangeListenerRedisHost: redisOfficial:6379 # Redis connection
-      ExchangeListenerRedisDatabase: 0 # Redis DB
+      ExchangeListenerRedisDatabase: 1 # Redis DB
       PodName: ExchangeListenerWorker
     depends_on:
       - redisOfficial
@@ -53,3 +55,6 @@ services:
      - ./appsettings.json:/app/appsettings.json:ro
      - ./appsettingsrmq.json:/app/appsettings.Production.json:ro
 
+networks:
+  rabbitmq_go_net:
+    driver: bridge

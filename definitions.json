@@ -15,7 +15,9 @@
   ],
   "vhosts": [
     {
-      "name": "/",
+      "name": "/"
+    },
+    {
       "name": "ELhost"
     }
   ],
